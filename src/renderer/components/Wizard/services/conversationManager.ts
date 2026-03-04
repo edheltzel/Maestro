@@ -24,7 +24,7 @@ import {
 	type WizardError,
 } from './wizardErrorDetection';
 import { wizardDebugLogger } from './phaseGenerator';
-import { getStdinFlags } from '../../utils/spawnHelpers';
+import { getStdinFlags } from '../../../utils/spawnHelpers';
 
 /**
  * Configuration for starting a conversation
@@ -580,9 +580,12 @@ class ConversationManager {
 			// Determine whether to send the prompt via stdin on Windows to avoid
 			// exceeding the command line length limit. Uses agent capabilities and
 			// SSH session flag to avoid interfering with remote execution paths.
+			const isSshSession = Boolean(
+				this.session!.sshRemoteConfig?.enabled && this.session!.sshRemoteConfig?.remoteId
+			);
 			const { sendPromptViaStdin: sendViaStdin, sendPromptViaStdinRaw: sendViaStdinRaw } =
 				getStdinFlags({
-					isSshSession: !!this.session!.sshRemoteConfig?.enabled,
+					isSshSession,
 					supportsStreamJsonInput: agent?.capabilities?.supportsStreamJsonInput ?? false,
 				});
 			if (sendViaStdin && !argsForSpawn.includes('--input-format')) {
@@ -618,13 +621,15 @@ class ConversationManager {
 				remoteId: this.session!.sshRemoteConfig?.remoteId || null,
 			});
 
-			wizardDebugLogger.log('spawn', 'Using stdin for Windows', {
-				sessionId: this.session!.sessionId,
-				platform: navigator.platform,
-				promptLength: prompt.length,
-				sendViaStdin,
-				sendViaStdinRaw,
-			});
+			if (sendViaStdin || sendViaStdinRaw) {
+				wizardDebugLogger.log('spawn', 'Using stdin for Windows', {
+					sessionId: this.session!.sessionId,
+					platform: navigator.platform,
+					promptLength: prompt.length,
+					sendViaStdin,
+					sendViaStdinRaw,
+				});
+			}
 
 			window.maestro.process
 				.spawn({
