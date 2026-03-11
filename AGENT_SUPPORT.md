@@ -122,7 +122,7 @@ Each agent declares capabilities that determine which UI features are available.
 ### Capability Interface
 
 ```typescript
-// src/main/agents/capabilities.ts
+// src/main/agents/capabilities.ts (23 boolean fields + 1 optional)
 
 interface AgentCapabilities {
 	// Core features
@@ -131,25 +131,39 @@ interface AgentCapabilities {
 	supportsJsonOutput: boolean; // Emits structured JSON for parsing
 	supportsSessionId: boolean; // Emits session ID for tracking
 
-	// Advanced features
+	// Input capabilities
 	supportsImageInput: boolean; // Can receive images in prompts
+	supportsImageInputOnResume: boolean; // Can receive images when resuming a session
 	supportsSlashCommands: boolean; // Has discoverable slash commands
+	supportsStreamJsonInput: boolean; // Accepts --input-format stream-json for image stdin
+
+	// Storage & tracking
 	supportsSessionStorage: boolean; // Persists provider sessions we can browse
 	supportsCostTracking: boolean; // Reports token costs
 	supportsUsageStats: boolean; // Reports token counts
 
-	// Streaming behavior
+	// Execution behavior
 	supportsBatchMode: boolean; // Runs per-message (vs persistent process)
+	requiresPromptToStart: boolean; // No eager spawn — needs prompt to start
 	supportsStreaming: boolean; // Streams output incrementally
+	supportsModelSelection: boolean; // Supports --model flag for model selection
 
-	// Message classification
+	// Display & classification
 	supportsResultMessages: boolean; // Distinguishes final result from intermediary
+	supportsThinkingDisplay: boolean; // Emits streaming thinking/reasoning content
+
+	// Context transfer
+	supportsContextMerge: boolean; // Can receive merged context from other sessions
+	supportsContextExport: boolean; // Can export context for transfer to other agents
 
 	// Feature gating (used instead of hardcoded agent ID lists)
 	supportsWizard: boolean; // Supports inline wizard structured output
 	supportsGroupChatModeration: boolean; // Can serve as group chat moderator
 	usesJsonLineOutput: boolean; // Uses JSONL (not JSON) in batch mode
 	usesCombinedContextWindow: boolean; // Combined input+output context display
+
+	// Optional non-boolean
+	imageResumeMode?: 'prompt-embed'; // How to handle images on resume when -i unavailable
 }
 ```
 
@@ -159,21 +173,31 @@ interface AgentCapabilities {
 
 ### Capability-to-UI Feature Mapping
 
-| Capability                    | UI Feature                 | Hidden When False     |
-| ----------------------------- | -------------------------- | --------------------- |
-| `supportsReadOnlyMode`        | Read-only toggle           | Toggle hidden         |
-| `supportsSessionStorage`      | Sessions browser tab       | Tab hidden            |
-| `supportsResume`              | Resume button              | Button disabled       |
-| `supportsCostTracking`        | Cost widget                | Widget hidden         |
-| `supportsUsageStats`          | Token usage display        | Display hidden        |
-| `supportsImageInput`          | Image attachment button    | Button hidden         |
-| `supportsSlashCommands`       | Slash command autocomplete | Autocomplete disabled |
-| `supportsSessionId`           | Session ID pill            | Pill hidden           |
-| `supportsResultMessages`      | Show only final result     | Shows all messages    |
-| `supportsWizard`              | Wizard agent selection     | Agent excluded        |
-| `supportsGroupChatModeration` | Moderator dropdown         | Agent excluded        |
-| `usesJsonLineOutput`          | CLI batch parsing strategy | Uses JSON fallback    |
-| `usesCombinedContextWindow`   | Context bar display        | Separate bars         |
+| Capability                    | UI Feature                    | Hidden When False        |
+| ----------------------------- | ----------------------------- | ------------------------ |
+| `supportsResume`              | Resume button                 | Button disabled          |
+| `supportsReadOnlyMode`        | Read-only toggle              | Toggle hidden            |
+| `supportsJsonOutput`          | Output parsing                | Raw text fallback        |
+| `supportsSessionId`           | Session ID pill               | Pill hidden              |
+| `supportsImageInput`          | Image attachment button       | Button hidden            |
+| `supportsImageInputOnResume`  | Image attach on resume        | Button hidden on resume  |
+| `supportsSlashCommands`       | Slash command autocomplete    | Autocomplete disabled    |
+| `supportsStreamJsonInput`     | Image via stdin (stream-json) | Uses file path fallback  |
+| `supportsSessionStorage`      | Sessions browser tab          | Tab hidden               |
+| `supportsCostTracking`        | Cost widget                   | Widget hidden            |
+| `supportsUsageStats`          | Token usage display           | Display hidden           |
+| `supportsBatchMode`           | Batch processing              | Persistent process mode  |
+| `requiresPromptToStart`       | Eager spawn on create         | Agent spawns immediately |
+| `supportsStreaming`           | Real-time display             | Waits for full response  |
+| `supportsModelSelection`      | Model dropdown                | Dropdown hidden          |
+| `supportsResultMessages`      | Show only final result        | Shows all messages       |
+| `supportsThinkingDisplay`     | Thinking/reasoning panel      | Panel hidden             |
+| `supportsContextMerge`        | Receive merged context        | Merge option hidden      |
+| `supportsContextExport`       | Export context                | Export option hidden     |
+| `supportsWizard`              | Wizard agent selection        | Agent excluded           |
+| `supportsGroupChatModeration` | Moderator dropdown            | Agent excluded           |
+| `usesJsonLineOutput`          | CLI batch parsing strategy    | Uses JSON fallback       |
+| `usesCombinedContextWindow`   | Context bar display           | Separate bars            |
 
 ### Context Window Configuration
 
@@ -223,13 +247,20 @@ When adding a new agent, start with all capabilities set to `false`:
   supportsJsonOutput: false,
   supportsSessionId: false,
   supportsImageInput: false,
+  supportsImageInputOnResume: false,
   supportsSlashCommands: false,
+  supportsStreamJsonInput: false,
   supportsSessionStorage: false,
   supportsCostTracking: false,
   supportsUsageStats: false,
   supportsBatchMode: false,
+  requiresPromptToStart: false,
   supportsStreaming: false,
+  supportsModelSelection: false,
   supportsResultMessages: false,
+  supportsThinkingDisplay: false,
+  supportsContextMerge: false,
+  supportsContextExport: false,
   supportsWizard: false,
   supportsGroupChatModeration: false,
   usesJsonLineOutput: false,
@@ -334,13 +365,20 @@ const AGENT_CAPABILITIES: Record<string, AgentCapabilities> = {
 		supportsJsonOutput: true, // If JSON output works
 		supportsSessionId: true, // If session ID in output
 		supportsImageInput: false, // Start false, enable if supported
+		supportsImageInputOnResume: false, // true if images work on resume
 		supportsSlashCommands: false,
+		supportsStreamJsonInput: false, // true if --input-format stream-json
 		supportsSessionStorage: false, // Enable if you implement storage
 		supportsCostTracking: false, // Enable if API-based with costs
 		supportsUsageStats: true, // If token counts in output
 		supportsBatchMode: true,
+		requiresPromptToStart: true, // true if no eager spawn
 		supportsStreaming: true,
+		supportsModelSelection: false, // true if --model flag exists
 		supportsResultMessages: false, // Enable if result vs intermediary distinction
+		supportsThinkingDisplay: false, // true if thinking/reasoning output
+		supportsContextMerge: false, // true if can receive merged context
+		supportsContextExport: false, // true if context is exportable
 		supportsWizard: false, // Enable if structured wizard output works
 		supportsGroupChatModeration: false, // Enable if agent can moderate group chats
 		usesJsonLineOutput: false, // true if batch output is JSONL (not JSON)

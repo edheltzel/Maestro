@@ -454,7 +454,9 @@ export function AllSessionsView({
 				displayName.toLowerCase().includes(query) ||
 				session.name.toLowerCase().includes(query) ||
 				session.cwd.toLowerCase().includes(query) ||
-				(session.toolType && session.toolType.toLowerCase().includes(query)) ||
+				(session.toolType &&
+					(session.toolType.toLowerCase().includes(query) ||
+						getAgentDisplayName(session.toolType).toLowerCase().includes(query))) ||
 				(session.worktreeBranch && session.worktreeBranch.toLowerCase().includes(query))
 			);
 		});

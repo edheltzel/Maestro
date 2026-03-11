@@ -53,6 +53,13 @@ describe('agentMetadata', () => {
 			expect(getAgentDisplayName('')).toBe('');
 		});
 
+		it('should not match Object.prototype keys like toString or constructor', () => {
+			expect(getAgentDisplayName('toString')).toBe('toString');
+			expect(getAgentDisplayName('constructor')).toBe('constructor');
+			expect(getAgentDisplayName('hasOwnProperty')).toBe('hasOwnProperty');
+			expect(getAgentDisplayName('valueOf')).toBe('valueOf');
+		});
+
 		it('should work for all AGENT_IDS entries', () => {
 			for (const id of AGENT_IDS) {
 				const name = getAgentDisplayName(id);

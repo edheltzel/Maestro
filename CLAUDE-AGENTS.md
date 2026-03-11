@@ -14,7 +14,7 @@ Agent support documentation for the Maestro codebase. For the main guide, see [[
 
 ## Agent Capabilities
 
-Each agent declares capabilities that control UI feature availability. See `src/main/agents/capabilities.ts` for the full interface (23 boolean flags).
+Each agent declares capabilities that control UI feature availability. See `src/main/agents/capabilities.ts` for the full interface (23 boolean flags + 1 optional). The table below shows key capabilities; see [AGENT_SUPPORT.md](AGENT_SUPPORT.md) for the complete list.
 
 | Capability                    | Description                              | UI Feature Controlled      |
 | ----------------------------- | ---------------------------------------- | -------------------------- |
@@ -23,17 +23,25 @@ Each agent declares capabilities that control UI feature availability. See `src/
 | `supportsJsonOutput`          | Emits structured JSON                    | Output parsing             |
 | `supportsSessionId`           | Emits provider session ID                | Session ID pill            |
 | `supportsImageInput`          | Accepts image attachments                | Attach image button        |
+| `supportsImageInputOnResume`  | Accepts images when resuming             | Attach button on resume    |
 | `supportsSlashCommands`       | Has discoverable commands                | Slash autocomplete         |
 | `supportsSessionStorage`      | Persists browsable provider sessions     | Sessions browser           |
 | `supportsCostTracking`        | Reports token costs                      | Cost widget                |
 | `supportsUsageStats`          | Reports token counts                     | Context window widget      |
 | `supportsBatchMode`           | Runs per-message                         | Batch processing           |
+| `requiresPromptToStart`       | No eager spawn — needs prompt            | Deferred spawn             |
 | `supportsStreaming`           | Streams output                           | Real-time display          |
+| `supportsModelSelection`      | Supports --model flag                    | Model dropdown             |
 | `supportsResultMessages`      | Distinguishes final result               | Message classification     |
+| `supportsThinkingDisplay`     | Emits thinking/reasoning content         | Thinking panel             |
+| `supportsContextMerge`        | Can receive merged context               | Merge option               |
+| `supportsContextExport`       | Can export context                       | Export option              |
 | `supportsWizard`              | Supports inline wizard structured output | Wizard agent selection     |
 | `supportsGroupChatModeration` | Can serve as group chat moderator        | Moderator dropdown         |
 | `usesJsonLineOutput`          | Uses JSONL output in batch mode          | CLI batch parsing strategy |
 | `usesCombinedContextWindow`   | Uses combined input+output context       | Context bar display mode   |
+| `supportsStreamJsonInput`     | Accepts stream-json input via stdin      | Image input method         |
+| `imageResumeMode?`            | Image handling on resume (optional)      | Resume image strategy      |
 
 ### Accessing Capabilities
 

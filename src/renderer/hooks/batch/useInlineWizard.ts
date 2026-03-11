@@ -680,7 +680,7 @@ export function useInlineWizard(): UseInlineWizardReturn {
 					setTabState(effectiveTabId, (prev) => ({
 						...prev,
 						isInitializing: false,
-						error: `The inline wizard is not supported for ${agentType}. Please use Claude, Claude Code, or Codex.`,
+						error: `The inline wizard is not supported for this agent type.`,
 					}));
 					return; // Don't update state with parsed results
 				}
@@ -995,7 +995,11 @@ export function useInlineWizard(): UseInlineWizardReturn {
 					currentState.autoRunFolderPath ||
 					(currentState.projectPath ? getAutoRunFolderPath(currentState.projectPath) : null);
 
-				if (currentState.agentType && effectiveAutoRunFolderPath) {
+				if (
+					currentState.agentType &&
+					hasCapabilityCached(currentState.agentType, 'supportsWizard') &&
+					effectiveAutoRunFolderPath
+				) {
 					// Use historyFilePath from state (fetched during startWizard)
 					const session = startInlineWizardConversation({
 						mode: newMode,

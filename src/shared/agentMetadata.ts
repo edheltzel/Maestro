@@ -28,7 +28,10 @@ export const AGENT_DISPLAY_NAMES: Record<AgentId, string> = {
  * Returns the raw id string as fallback for unknown agents.
  */
 export function getAgentDisplayName(agentId: AgentId | string): string {
-	return AGENT_DISPLAY_NAMES[agentId as AgentId] ?? agentId;
+	if (Object.prototype.hasOwnProperty.call(AGENT_DISPLAY_NAMES, agentId)) {
+		return AGENT_DISPLAY_NAMES[agentId as AgentId];
+	}
+	return agentId;
 }
 
 /**

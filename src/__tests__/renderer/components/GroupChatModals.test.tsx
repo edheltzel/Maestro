@@ -136,8 +136,9 @@ function createMockGroupChat(overrides: Partial<GroupChat> = {}): GroupChat {
 describe('GroupChatModal', () => {
 	/**
 	 * Setup fresh mocks before each test.
-	 * Uses mockImplementation (not mockResolvedValue) to avoid being cleared
-	 * by React 18 StrictMode double-effect or cross-test vi.clearAllMocks().
+	 * Uses mockResolvedValue for agent IPC methods (detect, getConfig, setConfig, getModels).
+	 * Called in beforeEach; individual tests only need to call this again if they
+	 * need different agents than the default single claude-code agent.
 	 */
 	function setupDefaultMocks(agents?: AgentConfig[]) {
 		const defaultAgents = agents ?? [createMockAgent({ id: 'claude-code', name: 'Claude Code' })];
@@ -157,7 +158,6 @@ describe('GroupChatModal', () => {
 
 	describe('create mode', () => {
 		it('should display MAESTRO_SESSION_RESUMED in moderator configuration panel', async () => {
-			setupDefaultMocks();
 			const onCreate = vi.fn();
 			const onClose = vi.fn();
 
@@ -236,7 +236,6 @@ describe('GroupChatModal', () => {
 
 	describe('edit mode', () => {
 		it('should display MAESTRO_SESSION_RESUMED in moderator configuration panel', async () => {
-			setupDefaultMocks();
 			const onSave = vi.fn();
 			const onClose = vi.fn();
 			const groupChat = createMockGroupChat();
