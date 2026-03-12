@@ -16,7 +16,7 @@ You have permission to read and write files in:
 
 The shared folder contains chat logs and can be used for collaborative file exchange between participants.
 
-{{WORKTREE_BASE_PATH}}## Recent Chat History:
+## Recent Chat History:
 
 {{HISTORY_CONTEXT}}
 

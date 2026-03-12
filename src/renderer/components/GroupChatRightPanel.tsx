@@ -325,7 +325,7 @@ export function GroupChatRightPanel({
 									color={participantColors[participant.name]}
 									groupChatId={groupChatId}
 									onContextReset={handleContextReset}
-									liveOutput={participantLiveOutput.get(participant.name)}
+									liveOutput={participantLiveOutput.get(`${groupChatId}:${participant.name}`)}
 								/>
 							);
 						})

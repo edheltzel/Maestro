@@ -5,6 +5,7 @@
  */
 
 import type { ProcessManager } from '../process-manager';
+import { captureException } from '../utils/sentry';
 import { GROUP_CHAT_PREFIX, type ProcessListenerDependencies } from './types';
 
 /**
@@ -248,7 +249,11 @@ export function setupExitListener(
 						groupChatEmitters.emitMessage?.(groupChatId, {
 							timestamp: new Date().toISOString(),
 							from: 'system',
-							content: `⚠️ Synthesis failed: ${String(err)}. You can send another message to continue.`,
+							content: `⚠️ Synthesis failed. You can send another message to continue.`,
+						});
+						captureException(err, {
+							operation: 'groupChat:spawnModeratorSynthesis',
+							groupChatId,
 						});
 					});
 				} else if (!isLastParticipant) {

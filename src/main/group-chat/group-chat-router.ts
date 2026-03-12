@@ -817,8 +817,11 @@ export async function routeModeratorResponse(
 	// Strip internal !autorun directives from the message before logging/display.
 	// These are machine-to-machine commands; storing them in the chat log causes
 	// the synthesis moderator to see them in history and potentially re-trigger them.
-	const { autoRunDirectives: _earlyAutoRunDirectives, cleanedText: displayMessage } =
-		extractAutoRunDirectives(message);
+	const {
+		autoRunDirectives,
+		autoRunParticipants,
+		cleanedText: displayMessage,
+	} = extractAutoRunDirectives(message);
 
 	// Log the message as coming from moderator (cleaned of !autorun directives)
 	await appendToLog(chat.logPath, 'moderator', displayMessage);
@@ -958,9 +961,7 @@ export async function routeModeratorResponse(
 	// Track participants that will need to respond for synthesis round
 	const participantsToRespond = new Set<string>();
 
-	// Extract !autorun directives from the ORIGINAL message (before cleaning)
-	// Note: we parse the original to find directives, but we already logged/emitted the cleaned version
-	const { autoRunDirectives, autoRunParticipants } = extractAutoRunDirectives(message);
+	// Use the !autorun directives already extracted above (same `message` input)
 	if (autoRunDirectives.length > 0) {
 		console.log(
 			`[GroupChat:Debug] Found !autorun directives for: ${autoRunDirectives.map((d) => (d.filename ? `${d.participantName}:${d.filename}` : d.participantName)).join(', ')}`
@@ -1090,7 +1091,6 @@ export async function routeModeratorResponse(
 				.replace(/\{\{GROUP_CHAT_NAME\}\}/g, updatedChat.name)
 				.replace(/\{\{READ_ONLY_NOTE\}\}/g, readOnlyNote)
 				.replace(/\{\{GROUP_CHAT_FOLDER\}\}/g, groupChatFolder)
-				.replace(/\{\{WORKTREE_BASE_PATH\}\}/g, '')
 				.replace(/\{\{HISTORY_CONTEXT\}\}/g, historyContext)
 				.replace(/\{\{READ_ONLY_LABEL\}\}/g, readOnlyLabel)
 				.replace(/\{\{MESSAGE\}\}/g, message)
@@ -1670,7 +1670,6 @@ export async function respawnParticipantWithRecovery(
 		.replace(/\{\{GROUP_CHAT_NAME\}\}/g, chat.name)
 		.replace(/\{\{READ_ONLY_NOTE\}\}/g, readOnlyNote)
 		.replace(/\{\{GROUP_CHAT_FOLDER\}\}/g, groupChatFolder)
-		.replace(/\{\{WORKTREE_BASE_PATH\}\}/g, '')
 		.replace(/\{\{HISTORY_CONTEXT\}\}/g, historyContext)
 		.replace(/\{\{READ_ONLY_LABEL\}\}/g, readOnlyLabel)
 		.replace(

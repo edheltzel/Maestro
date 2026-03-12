@@ -19,6 +19,7 @@ import { useUIStore } from '../../stores/uiStore';
 import { useAgentErrorRecovery } from '../agent/useAgentErrorRecovery';
 import { notifyToast } from '../../stores/notificationStore';
 import { generateId } from '../../utils/ids';
+import { getAutoRunSessionsForGroupChat } from '../../utils/groupChatAutoRunRegistry';
 
 // ---------------------------------------------------------------------------
 // Return type
@@ -207,7 +208,7 @@ export function useGroupChatHandlers(): GroupChatHandlersReturn {
 				}
 				// Clear live output when participant becomes idle
 				if (state === 'idle') {
-					clearParticipantLiveOutput(participantName);
+					clearParticipantLiveOutput(`${id}:${participantName}`);
 				}
 			}
 		);
@@ -215,7 +216,7 @@ export function useGroupChatHandlers(): GroupChatHandlersReturn {
 		const unsubLiveOutput = window.maestro.groupChat.onParticipantLiveOutput?.(
 			(id, participantName, chunk) => {
 				if (id === useGroupChatStore.getState().activeGroupChatId) {
-					appendParticipantLiveOutput(participantName, chunk);
+					appendParticipantLiveOutput(`${id}:${participantName}`, chunk);
 				}
 			}
 		);
@@ -604,7 +605,21 @@ export function useGroupChatHandlers(): GroupChatHandlersReturn {
 	const handleStopAll = useCallback(async () => {
 		const { activeGroupChatId } = useGroupChatStore.getState();
 		if (!activeGroupChatId) return;
-		await window.maestro.groupChat.stopAll(activeGroupChatId);
+		try {
+			// Cancel any in-flight autorun batch runs for this group chat.
+			// These run in the agent's own Maestro session (not group-chat-prefixed),
+			// so the main process's clearAllParticipantSessions won't reach them.
+			const autoRunSessionIds = getAutoRunSessionsForGroupChat(activeGroupChatId);
+			for (const sessionId of autoRunSessionIds) {
+				useBatchStore.getState().dispatchBatch({
+					type: 'COMPLETE_BATCH',
+					sessionId,
+				});
+			}
+			await window.maestro.groupChat.stopAll(activeGroupChatId);
+		} catch (error) {
+			console.error('[GroupChat] Failed to stop all:', error);
+		}
 	}, []);
 
 	const handleGroupChatDraftChange = useCallback((draft: string) => {

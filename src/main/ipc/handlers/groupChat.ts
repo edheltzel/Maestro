@@ -61,7 +61,13 @@ import {
 } from '../../group-chat/group-chat-agent';
 
 // Group chat router imports
-import { routeUserMessage, clearPendingParticipants } from '../../group-chat/group-chat-router';
+import {
+	routeUserMessage,
+	clearPendingParticipants,
+	routeAgentResponse,
+	markParticipantResponded,
+	spawnModeratorSynthesis,
+} from '../../group-chat/group-chat-router';
 
 // Agent detector import
 import { AgentDetector } from '../../agents';
@@ -512,8 +518,6 @@ export function registerGroupChatHandlers(deps: GroupChatHandlerDependencies): v
 					LOG_CONTEXT
 				);
 				const processManager = getProcessManager();
-				const { routeAgentResponse, markParticipantResponded, spawnModeratorSynthesis } =
-					await import('../../group-chat/group-chat-router');
 
 				// Log the autorun summary as the participant's response
 				await routeAgentResponse(

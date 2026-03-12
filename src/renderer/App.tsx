@@ -1280,11 +1280,11 @@ function MaestroConsoleInner() {
 							if (allFiles.includes(targetFilename)) {
 								files = [targetFilename];
 							} else {
-								// Specified file not found — fall back to all docs but warn the moderator
-								console.warn(
-									`[GroupChat:AutoRun] Specified file "${targetFilename}" not found for "${participantName}" — running all docs`
+								// Specified file not found — report failure so the moderator can react
+								reportFailure(
+									`Specified file "${targetFilename}" not found in "${session.autoRunFolderPath}" for "${participantName}". Available files: ${allFiles.join(', ')}`
 								);
-								files = allFiles;
+								return;
 							}
 						} else {
 							files = allFiles;

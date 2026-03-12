@@ -38,3 +38,17 @@ export function consumeGroupChatAutoRun(sessionId: string): GroupChatAutoRunEntr
 	}
 	return entry;
 }
+
+/**
+ * Get all session IDs with in-flight autorun batch runs for a given group chat.
+ * Used by stopAll to cancel orphaned batch runs that aren't tracked as group-chat sessions.
+ */
+export function getAutoRunSessionsForGroupChat(groupChatId: string): string[] {
+	const sessionIds: string[] = [];
+	for (const [sessionId, entry] of registry) {
+		if (entry.groupChatId === groupChatId) {
+			sessionIds.push(sessionId);
+		}
+	}
+	return sessionIds;
+}
