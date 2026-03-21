@@ -213,6 +213,7 @@ export function setupExitListener(
 
 			// Emit participant state change to show this participant is done working
 			groupChatEmitters.emitParticipantState?.(groupChatId, participantName, 'idle');
+			groupChatRouter.clearActiveParticipantTaskSession(groupChatId, participantName);
 			debugLog('GroupChat:Debug', ` Emitted participant state: idle`);
 
 			// Route the buffered output now that process is complete

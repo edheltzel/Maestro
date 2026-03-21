@@ -30,7 +30,11 @@ import {
 	getModeratorSystemPrompt,
 	getModeratorSynthesisPrompt,
 } from './group-chat-moderator';
-import { addParticipant } from './group-chat-agent';
+import {
+	addParticipant,
+	setActiveParticipantSession,
+	clearActiveParticipantSession,
+} from './group-chat-agent';
 import { AgentDetector } from '../agents';
 import { powerManager } from '../power-manager';
 import { logger } from '../utils/logger';
@@ -276,6 +280,16 @@ export function clearPendingParticipants(groupChatId: string): void {
 	}
 	pendingParticipantResponses.delete(groupChatId);
 	autoRunParticipantTracker.delete(groupChatId);
+}
+
+/**
+ * Clears the active task session tracked for a participant.
+ */
+export function clearActiveParticipantTaskSession(
+	groupChatId: string,
+	participantName: string
+): void {
+	clearActiveParticipantSession(groupChatId, participantName);
 }
 
 /**
@@ -1303,6 +1317,7 @@ export async function routeModeratorResponse(
 				);
 				console.log(`[GroupChat:Debug] promptArgs: ${agent.promptArgs ? 'defined' : 'undefined'}`);
 				console.log(`[GroupChat:Debug] noPromptSeparator: ${agent.noPromptSeparator ?? false}`);
+				setActiveParticipantSession(groupChatId, participantName, sessionId);
 
 				// Register this participant in the global pending map IMMEDIATELY after spawn.
 				// This prevents a race condition where the process exits before the post-loop
@@ -1887,5 +1902,6 @@ export async function respawnParticipantWithRecovery(
 
 	console.log(`[GroupChat:Debug] Recovery spawn result: ${JSON.stringify(spawnResult)}`);
 	console.log(`[GroupChat:Debug] promptArgs: ${agent.promptArgs ? 'defined' : 'undefined'}`);
+	setActiveParticipantSession(groupChatId, participantName, sessionId);
 	console.log(`[GroupChat:Debug] =============================================`);
 }

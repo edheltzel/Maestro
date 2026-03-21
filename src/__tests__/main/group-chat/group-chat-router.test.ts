@@ -794,6 +794,30 @@ describe('group-chat-router', () => {
 			expect(participantSpawnCall).toBeDefined();
 			expect(participantSpawnCall?.[0].readOnlyMode).toBe(false);
 		});
+
+		it('auto-added participants are only started once for a moderator handoff', async () => {
+			const chat = await createTestChatWithModerator('Auto Add Single Spawn Test');
+			setGetSessionsCallback(() => [
+				{
+					id: 'session-client',
+					name: 'Client',
+					toolType: 'claude-code',
+					cwd: '/tmp/project',
+				},
+			]);
+
+			await routeModeratorResponse(
+				chat.id,
+				'@Client: Please create the requested file',
+				mockProcessManager,
+				mockAgentDetector
+			);
+
+			const participantSpawns = mockProcessManager.spawn.mock.calls.filter((call) =>
+				call[0].sessionId?.includes(`group-chat-${chat.id}-participant-Client-`)
+			);
+			expect(participantSpawns).toHaveLength(1);
+		});
 	});
 
 	// ===========================================================================
@@ -892,7 +916,7 @@ describe('group-chat-router', () => {
 			mockWrapSpawnWithSsh.mockReset();
 		});
 
-		it('user-mention auto-add passes sshRemoteConfig and sshStore to addParticipant', async () => {
+		it('user-mention auto-add stores SSH participant metadata without spawning yet', async () => {
 			const chat = await createTestChatWithModerator('SSH User Mention Test');
 
 			// Set up a session with SSH config that the router can discover
@@ -915,13 +939,15 @@ describe('group-chat-router', () => {
 				mockAgentDetector
 			);
 
-			// The SSH wrapper should have been called when addParticipant spawned the agent
-			expect(mockWrapSpawnWithSsh).toHaveBeenCalledWith(
-				expect.objectContaining({
-					command: expect.any(String),
-				}),
-				sshRemoteConfig,
-				mockSshStore
+			expect(mockWrapSpawnWithSsh).not.toHaveBeenCalled();
+			const updatedChat = await loadGroupChat(chat.id);
+			expect(updatedChat?.participants).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						name: 'RemoteAgent',
+						sshRemoteName: 'PedTome',
+					}),
+				])
 			);
 		});
 
