@@ -1362,24 +1362,16 @@ export async function routeModeratorResponse(
 			`[GroupChat:Debug] No actionable participant work started - moderator response is final`
 		);
 
-		// Notify the user if the moderator's message contained @mentions that didn't resolve
-		// to any actionable participant work — this is the most common silent-failure scenario
-		// (e.g. markdown-formatted mentions that couldn't be parsed, or all directives were skipped).
-		if (allMentions.length > 0 || autoRunDirectives.length > 0) {
-			const unresolvedNames = allMentions.filter(
-				(name) =>
-					!updatedChat.participants.some((p) => mentionMatches(name, p.name)) ||
-					!mentions.includes(
-						updatedChat.participants.find((p) => mentionMatches(name, p.name))?.name ?? ''
-					)
-			);
-			if (unresolvedNames.length > 0 || (autoRunDirectives.length > 0 && mentions.length === 0)) {
-				groupChatEmitters.emitMessage?.(groupChatId, {
-					timestamp: new Date().toISOString(),
-					from: 'system',
-					content: `⚠️ The moderator mentioned participants but none could be activated. ${unresolvedNames.length > 0 ? `Unresolved mentions: ${unresolvedNames.map((n) => `@${n}`).join(', ')}.` : 'All !autorun directives were skipped.'} You may need to send another message to retry.`,
-				});
-			}
+		// Unknown @tokens should be treated as plain text, not as a system error.
+		// Only emit a system warning here when explicit !autorun directives were present
+		// but none could be activated.
+		if (autoRunDirectives.length > 0 && mentions.length === 0) {
+			groupChatEmitters.emitMessage?.(groupChatId, {
+				timestamp: new Date().toISOString(),
+				from: 'system',
+				content:
+					'⚠️ The moderator included !autorun directives but none could be activated. You may need to send another message to retry.',
+			});
 		}
 
 		groupChatEmitters.emitStateChange?.(groupChatId, 'idle');

@@ -152,6 +152,7 @@ import { GitStatusProvider } from './contexts/GitStatusContext';
 import { InputProvider, useInputContext } from './contexts/InputContext';
 import { useGroupChatStore } from './stores/groupChatStore';
 import { registerGroupChatAutoRun } from './utils/groupChatAutoRunRegistry';
+import { resolveGroupChatAutoRunTarget } from './utils/groupChatAutoRun';
 import { useBatchStore } from './stores/batchStore';
 // All session state is read directly from useSessionStore in MaestroConsoleInner.
 import { useSessionStore, selectActiveSession } from './stores/sessionStore';
@@ -1311,22 +1312,14 @@ function MaestroConsoleInner() {
 							return;
 						}
 
-						// If a specific filename was given (e.g. !autorun @Agent:plan.md), run only that doc.
-						// Otherwise run all docs in the folder.
-						let files: string[];
-						if (targetFilename) {
-							if (allFiles.includes(targetFilename)) {
-								files = [targetFilename];
-							} else {
-								// Specified file not found — report failure so the moderator can react
-								reportFailure(
-									`Specified file "${targetFilename}" not found in "${session.autoRunFolderPath}" for "${participantName}". Available files: ${allFiles.join(', ')}`
-								);
-								return;
-							}
-						} else {
-							files = allFiles;
+						const resolvedTarget = resolveGroupChatAutoRunTarget(allFiles, targetFilename);
+						if ('error' in resolvedTarget) {
+							reportFailure(
+								`${resolvedTarget.error} in "${session.autoRunFolderPath}" for "${participantName}".`
+							);
+							return;
 						}
+						const files = resolvedTarget.files;
 
 						const documents = files.map((filename, i) => ({
 							id: `${session.id}-${i}`,

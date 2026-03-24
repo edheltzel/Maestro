@@ -75,6 +75,7 @@ import {
 } from '../../../main/group-chat/group-chat-storage';
 import { readLog } from '../../../main/group-chat/group-chat-log';
 import { AgentDetector } from '../../../main/agents';
+import { groupChatEmitters } from '../../../main/ipc/handlers/groupChat';
 
 describe('group-chat-router', () => {
 	let mockProcessManager: IProcessManager;
@@ -149,6 +150,7 @@ describe('group-chat-router', () => {
 
 		// Clear mocks
 		vi.clearAllMocks();
+		groupChatEmitters.emitMessage = undefined;
 	});
 
 	// Helper to track created chats for cleanup
@@ -551,6 +553,29 @@ describe('group-chat-router', () => {
 
 			// Should not spawn any participant (since Unknown doesn't exist)
 			expect(mockProcessManager.spawn).not.toHaveBeenCalled();
+		});
+
+		it('treats unresolved @tokens as plain text without emitting a system warning', async () => {
+			const chat = await createTestChatWithModerator('Literal At Symbol Test');
+			const emitMessage = vi.fn();
+			groupChatEmitters.emitMessage = emitMessage;
+
+			mockProcessManager.spawn.mockClear();
+
+			await routeModeratorResponse(
+				chat.id,
+				'Please keep the literal @example value in the final message.',
+				mockProcessManager,
+				mockAgentDetector
+			);
+
+			expect(mockProcessManager.spawn).not.toHaveBeenCalled();
+			expect(emitMessage).not.toHaveBeenCalledWith(
+				chat.id,
+				expect.objectContaining({
+					from: 'system',
+				})
+			);
 		});
 
 		it('throws for non-existent chat', async () => {
