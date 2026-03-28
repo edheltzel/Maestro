@@ -174,6 +174,7 @@ export function createQuitHandler(deps: QuitHandlerDependencies): QuitHandler {
 		isQuitConfirmed: () => state.quitConfirmed,
 
 		confirmQuit: () => {
+			clearConfirmationTimeout();
 			state.quitConfirmed = true;
 		},
 	};
