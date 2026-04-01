@@ -1450,7 +1450,11 @@ const AutoRunInner = forwardRef<AutoRunHandle, AutoRunProps>(function AutoRunInn
 			// Handle internal file links (wiki-style [[links]])
 			onFileClick: handleFileClick,
 			// Open external links in system browser
-			onExternalLinkClick: (href) => window.maestro.shell.openExternal(href),
+			onExternalLinkClick: (href) => {
+				if (/^https?:\/\/|^mailto:/.test(href)) {
+					void window.maestro.shell.openExternal(href);
+				}
+			},
 			// Provide container ref for anchor link scrolling
 			containerRef: previewRef,
 			// No search highlighting here - added separately when needed
@@ -1487,7 +1491,11 @@ const AutoRunInner = forwardRef<AutoRunHandle, AutoRunProps>(function AutoRunInn
 				mermaid: ({ code, theme: t }) => <MermaidRenderer chart={code} theme={t} />,
 			},
 			onFileClick: handleFileClick,
-			onExternalLinkClick: (href) => window.maestro.shell.openExternal(href),
+			onExternalLinkClick: (href) => {
+				if (/^https?:\/\/|^mailto:/.test(href)) {
+					void window.maestro.shell.openExternal(href);
+				}
+			},
 			containerRef: previewRef,
 			searchHighlight: {
 				query: searchQuery,
