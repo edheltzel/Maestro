@@ -877,7 +877,9 @@ export const FilePreview = React.memo(
 						void window.maestro.shell.openPath(href.replace(/^file:\/\//, ''));
 						return;
 					}
-					void window.maestro.shell.openExternal(href);
+					if (/^https?:\/\/|^mailto:/.test(href)) {
+						void window.maestro.shell.openExternal(href);
+					}
 				},
 				containerRef: markdownContainerRef,
 			});

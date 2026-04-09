@@ -3,6 +3,7 @@ TEMP-REFACTORING-PLAN.md
 TEMP-REFACTORING-PLAN-2.md
 Auto\ Run\ Docs/
 Work\ Trees/
+.worktrees/
 community-data/
 .mcp.json
 specs/
@@ -57,3 +58,6 @@ yarn-error.log*
 .vscode/
 .VSCodeCounter
 .qodo
+
+# Claude Code local settings
+.claude/settings.local.json

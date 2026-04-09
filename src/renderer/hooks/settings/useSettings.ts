@@ -27,6 +27,7 @@ import type {
 	DirectorNotesSettings,
 	EncoreFeatureFlags,
 } from '../../types';
+import type { FileExplorerIconTheme } from '../../utils/fileExplorerIcons/shared';
 import {
 	useSettingsStore,
 	loadAllSettings,
@@ -97,6 +98,8 @@ export interface UseSettingsReturn {
 	setChatRawTextMode: (value: boolean) => void;
 	showHiddenFiles: boolean;
 	setShowHiddenFiles: (value: boolean) => void;
+	fileExplorerIconTheme: FileExplorerIconTheme;
+	setFileExplorerIconTheme: (value: FileExplorerIconTheme) => void;
 
 	// Terminal settings
 	terminalWidth: number;
@@ -308,6 +311,10 @@ export interface UseSettingsReturn {
 	setUseNativeTitleBar: (value: boolean) => void;
 	autoHideMenuBar: boolean;
 	setAutoHideMenuBar: (value: boolean) => void;
+
+	// Group Chat settings
+	moderatorStandingInstructions: string;
+	setModeratorStandingInstructions: (value: string) => void;
 }
 
 export function useSettings(): UseSettingsReturn {
@@ -326,6 +333,18 @@ export function useSettings(): UseSettingsReturn {
 		}
 		const cleanup = window.maestro.app.onSystemResume(() => {
 			console.log('[Settings] System resumed from sleep, reloading settings');
+			loadAllSettings();
+		});
+		return cleanup;
+	}, []);
+
+	// Reload settings when external change detected (e.g., maestro-cli settings set)
+	useEffect(() => {
+		if (!window.maestro?.settings?.onExternalChange) {
+			return;
+		}
+		const cleanup = window.maestro.settings.onExternalChange(() => {
+			console.log('[Settings] External settings change detected, reloading');
 			loadAllSettings();
 		});
 		return cleanup;

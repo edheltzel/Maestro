@@ -34,6 +34,8 @@ import type {
 import { DEFAULT_CUSTOM_THEME_COLORS } from '../constants/themes';
 import { DEFAULT_SHORTCUTS, TAB_SHORTCUTS, FIXED_SHORTCUTS } from '../constants/shortcuts';
 import { getLevelIndex } from '../constants/keyboardMastery';
+import type { FileExplorerIconTheme } from '../utils/fileExplorerIcons/shared';
+import { isFileExplorerIconTheme } from '../utils/fileExplorerIcons/shared';
 import { commitCommandPrompt } from '../../prompts';
 
 // ============================================================================
@@ -198,6 +200,7 @@ export interface SettingsStoreState {
 	markdownEditMode: boolean;
 	chatRawTextMode: boolean;
 	showHiddenFiles: boolean;
+	fileExplorerIconTheme: FileExplorerIconTheme;
 	terminalWidth: number;
 	logLevel: string;
 	maxLogBuffer: number;
@@ -252,6 +255,7 @@ export interface SettingsStoreState {
 	wakatimeDetailedTracking: boolean;
 	useNativeTitleBar: boolean;
 	autoHideMenuBar: boolean;
+	moderatorStandingInstructions: string;
 }
 
 export interface SettingsStoreActions {
@@ -279,6 +283,7 @@ export interface SettingsStoreActions {
 	setMarkdownEditMode: (value: boolean) => void;
 	setChatRawTextMode: (value: boolean) => void;
 	setShowHiddenFiles: (value: boolean) => void;
+	setFileExplorerIconTheme: (value: FileExplorerIconTheme) => void;
 	setTerminalWidth: (value: number) => void;
 	setMaxOutputLines: (value: number) => void;
 	setOsNotificationsEnabled: (value: boolean) => void;
@@ -324,6 +329,7 @@ export interface SettingsStoreActions {
 	setWakatimeDetailedTracking: (value: boolean) => void;
 	setUseNativeTitleBar: (value: boolean) => void;
 	setAutoHideMenuBar: (value: boolean) => void;
+	setModeratorStandingInstructions: (value: string) => void;
 
 	// Async setters
 	setLogLevel: (value: string) => Promise<void>;
@@ -422,6 +428,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 		markdownEditMode: false,
 		chatRawTextMode: false,
 		showHiddenFiles: true,
+		fileExplorerIconTheme: 'default',
 		terminalWidth: 100,
 		logLevel: 'info',
 		maxLogBuffer: 5000,
@@ -476,6 +483,7 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 		wakatimeDetailedTracking: false,
 		useNativeTitleBar: false,
 		autoHideMenuBar: false,
+		moderatorStandingInstructions: '',
 
 		// ============================================================================
 		// Simple Setters
@@ -596,6 +604,11 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 		setShowHiddenFiles: (value) => {
 			set({ showHiddenFiles: value });
 			window.maestro.settings.set('showHiddenFiles', value);
+		},
+
+		setFileExplorerIconTheme: (value) => {
+			set({ fileExplorerIconTheme: value });
+			window.maestro.settings.set('fileExplorerIconTheme', value);
 		},
 
 		setTerminalWidth: (value) => {
@@ -886,6 +899,12 @@ export const useSettingsStore = create<SettingsStore>()((set, get) => {
 		setAutoHideMenuBar: (value) => {
 			set({ autoHideMenuBar: value });
 			window.maestro.settings.set('autoHideMenuBar', value);
+		},
+
+		setModeratorStandingInstructions: (value) => {
+			const trimmed = value.slice(0, 2000);
+			set({ moderatorStandingInstructions: trimmed });
+			window.maestro.settings.set('moderatorStandingInstructions', trimmed);
 		},
 
 		// ============================================================================
@@ -1474,6 +1493,12 @@ export async function loadAllSettings(): Promise<void> {
 		if (allSettings['showHiddenFiles'] !== undefined)
 			patch.showHiddenFiles = allSettings['showHiddenFiles'] as boolean;
 
+		if (allSettings['fileExplorerIconTheme'] !== undefined) {
+			patch.fileExplorerIconTheme = isFileExplorerIconTheme(allSettings['fileExplorerIconTheme'])
+				? allSettings['fileExplorerIconTheme']
+				: 'default';
+		}
+
 		if (allSettings['terminalWidth'] !== undefined)
 			patch.terminalWidth = allSettings['terminalWidth'] as number;
 
@@ -1797,6 +1822,9 @@ export async function loadAllSettings(): Promise<void> {
 		if (allSettings['autoHideMenuBar'] !== undefined)
 			patch.autoHideMenuBar = allSettings['autoHideMenuBar'] as boolean;
 
+		if (allSettings['moderatorStandingInstructions'] !== undefined)
+			patch.moderatorStandingInstructions = allSettings['moderatorStandingInstructions'] as string;
+
 		// Apply the entire patch in one setState call
 		patch.settingsLoaded = true;
 		useSettingsStore.setState(patch);
@@ -1841,6 +1869,7 @@ export function getSettingsActions() {
 		setMarkdownEditMode: state.setMarkdownEditMode,
 		setChatRawTextMode: state.setChatRawTextMode,
 		setShowHiddenFiles: state.setShowHiddenFiles,
+		setFileExplorerIconTheme: state.setFileExplorerIconTheme,
 		setTerminalWidth: state.setTerminalWidth,
 		setLogLevel: state.setLogLevel,
 		setMaxLogBuffer: state.setMaxLogBuffer,
@@ -1912,5 +1941,6 @@ export function getSettingsActions() {
 		setWakatimeDetailedTracking: state.setWakatimeDetailedTracking,
 		setUseNativeTitleBar: state.setUseNativeTitleBar,
 		setAutoHideMenuBar: state.setAutoHideMenuBar,
+		setModeratorStandingInstructions: state.setModeratorStandingInstructions,
 	};
 }

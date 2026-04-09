@@ -394,9 +394,25 @@ export function createMarkdownComponents(options: MarkdownComponentsOptions): Pa
 				}
 
 				// Standard syntax-highlighted code block
+				// Use light/dark base style depending on theme mode, then
+				// override text color & background so plain-text / unknown-language
+				// code blocks match inline code across all themes.
+				const baseStyle = getSyntaxStyle(theme.mode);
+				const themedStyle = {
+					...baseStyle,
+					'pre[class*="language-"]': {
+						...(baseStyle as any)['pre[class*="language-"]'],
+						color: theme.colors.textMain,
+						background: theme.colors.bgActivity,
+					},
+					'code[class*="language-"]': {
+						...(baseStyle as any)['code[class*="language-"]'],
+						color: theme.colors.textMain,
+					},
+				};
 				return React.createElement(SyntaxHighlighter, {
 					language,
-					style: getSyntaxStyle(theme.mode),
+					style: themedStyle,
 					customStyle: {
 						margin: codeBlockStyle?.margin ?? '0.5em 0',
 						padding: codeBlockStyle?.padding ?? '1em',
@@ -462,8 +478,16 @@ export function createMarkdownComponents(options: MarkdownComponentsOptions): Pa
 									targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
 								}
 							}
-						} else if (href && onExternalLinkClick) {
+						} else if (href && onExternalLinkClick && /^https?:\/\/|^mailto:/.test(href)) {
 							onExternalLinkClick(href);
+						} else if (
+							href &&
+							onFileClick &&
+							!href.startsWith('mailto:') &&
+							!/^https?:\/\//.test(href)
+						) {
+							// Treat relative paths (e.g. LICENSE, ./README.md) as file links
+							onFileClick(href, { openInNewTab: e.metaKey || e.ctrlKey });
 						}
 					},
 					style: { color: theme.colors.accent, textDecoration: 'underline', cursor: 'pointer' },
@@ -616,7 +640,11 @@ export function createWizardBubbleMarkdownComponents(theme: Theme): Partial<Comp
 					type: 'button',
 					className: 'underline',
 					style: { color: theme.colors.accent },
-					onClick: () => href && window.maestro.shell.openExternal(href),
+					onClick: () => {
+						if (href && /^https?:\/\/|^mailto:/.test(href)) {
+							window.maestro.shell.openExternal(href);
+						}
+					},
 				},
 				children
 			),
@@ -713,7 +741,9 @@ export function createReleaseNotesMarkdownComponents(theme: Theme): Partial<Comp
 					href,
 					onClick: (e: React.MouseEvent) => {
 						e.preventDefault();
-						if (href) window.maestro.shell.openExternal(href);
+						if (href && /^https?:\/\/|^mailto:/.test(href)) {
+							window.maestro.shell.openExternal(href);
+						}
 					},
 					className: 'hover:underline cursor-pointer',
 					style: { color: theme.colors.accent },
